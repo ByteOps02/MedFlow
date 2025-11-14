@@ -21,6 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/types/supabase";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 const Products = () => {
   const [page, setPage] = useState(0);

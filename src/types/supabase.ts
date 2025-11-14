@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -142,15 +141,7 @@ export type Database = {
           id?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       purchase_order_items: {
         Row: {
@@ -632,11 +623,11 @@ export type Database = {
     Functions: {
       handle_new_user: {
         Args: Record<PropertyKey, never>
-        Returns: Record<PropertyKey, never>
+        Returns: undefined
       }
       update_updated_at_column: {
         Args: Record<PropertyKey, never>
-        Returns: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
