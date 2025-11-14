@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,18 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/types/supabase";
 import { useQuery } from "@tanstack/react-query";
-
-interface ProductRecord {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  strength: string;
-  unit: string;
-  stock_quantity: number;
-  status: string;
-}
 
 const Products = () => {
   const [page, setPage] = useState(0);
@@ -48,7 +37,7 @@ const Products = () => {
 
       let query = supabase
         .from("products")
-        .select("id, name, sku, category, strength, unit, stock_quantity, status", { count: 'exact' });
+        .select("*", { count: 'exact' });
 
       if (filterCategory !== "all") {
         query = query.eq("category", filterCategory);
@@ -71,7 +60,7 @@ const Products = () => {
     },
   });
 
-  const products: ProductRecord[] = productsData?.data || [];
+  const products: Tables<'products'>[] = productsData?.data || [];
   const totalCount = productsData?.count || 0;
   const pageCount = Math.ceil(totalCount / 10);
 

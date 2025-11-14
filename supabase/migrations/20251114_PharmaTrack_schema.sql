@@ -9,19 +9,22 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Enable RLS for profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Create policies for profiles
+-- Create policies for profiles (drop if exists first)
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
 CREATE POLICY "Users can view their own profile"
   ON public.profiles
   FOR SELECT
   TO authenticated
   USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile"
   ON public.profiles
   FOR UPDATE
   TO authenticated
   USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 CREATE POLICY "Users can insert their own profile"
   ON public.profiles
   FOR INSERT
@@ -38,6 +41,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Trigger for automatic timestamp updates on profiles
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW
@@ -59,7 +63,8 @@ BEGIN
 END;
 $$;
 
--- Trigger to create profile when user signs up
+-- Trigger to create profile when user signs up (drop if exists first)
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
@@ -83,12 +88,20 @@ CREATE TABLE IF NOT EXISTS public.products (
 );
 
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view products" ON public.products;
 CREATE POLICY "Authenticated users can view products"
   ON public.products FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert products" ON public.products;
 CREATE POLICY "Authenticated users can insert products"
   ON public.products FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own products" ON public.products;
 CREATE POLICY "Authenticated users can update their own products"
   ON public.products FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own products" ON public.products;
 CREATE POLICY "Authenticated users can delete their own products"
   ON public.products FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
@@ -108,12 +121,20 @@ CREATE TABLE IF NOT EXISTS public.batches (
 );
 
 ALTER TABLE public.batches ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view batches" ON public.batches;
 CREATE POLICY "Authenticated users can view batches"
   ON public.batches FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert batches" ON public.batches;
 CREATE POLICY "Authenticated users can insert batches"
   ON public.batches FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own batches" ON public.batches;
 CREATE POLICY "Authenticated users can update their own batches"
   ON public.batches FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own batches" ON public.batches;
 CREATE POLICY "Authenticated users can delete their own batches"
   ON public.batches FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
@@ -133,12 +154,20 @@ CREATE TABLE IF NOT EXISTS public.suppliers (
 );
 
 ALTER TABLE public.suppliers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view suppliers" ON public.suppliers;
 CREATE POLICY "Authenticated users can view suppliers"
   ON public.suppliers FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert suppliers" ON public.suppliers;
 CREATE POLICY "Authenticated users can insert suppliers"
   ON public.suppliers FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own suppliers" ON public.suppliers;
 CREATE POLICY "Authenticated users can update their own suppliers"
   ON public.suppliers FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own suppliers" ON public.suppliers;
 CREATE POLICY "Authenticated users can delete their own suppliers"
   ON public.suppliers FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
@@ -150,24 +179,29 @@ CREATE TABLE IF NOT EXISTS public.purchase_orders (
   expected_delivery_date DATE,
   status TEXT NOT NULL DEFAULT 'pending',
   total_amount NUMERIC(10, 2),
+  po_number TEXT UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
 ALTER TABLE public.purchase_orders ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view purchase orders" ON public.purchase_orders;
 CREATE POLICY "Authenticated users can view purchase orders"
   ON public.purchase_orders FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert purchase orders" ON public.purchase_orders;
 CREATE POLICY "Authenticated users can insert purchase orders"
   ON public.purchase_orders FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own purchase orders" ON public.purchase_orders;
 CREATE POLICY "Authenticated users can update their own purchase orders"
   ON public.purchase_orders FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own purchase orders" ON public.purchase_orders;
 CREATE POLICY "Authenticated users can delete their own purchase orders"
   ON public.purchase_orders FOR DELETE TO authenticated USING (auth.uid() = user_id);
-
--- Add po_number column to purchase_orders table
-ALTER TABLE public.purchase_orders
-ADD COLUMN po_number TEXT UNIQUE;
 
 -- Create purchase_order_items table
 CREATE TABLE IF NOT EXISTS public.purchase_order_items (
@@ -182,12 +216,20 @@ CREATE TABLE IF NOT EXISTS public.purchase_order_items (
 );
 
 ALTER TABLE public.purchase_order_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view purchase order items" ON public.purchase_order_items;
 CREATE POLICY "Authenticated users can view purchase order items"
   ON public.purchase_order_items FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert purchase order items" ON public.purchase_order_items;
 CREATE POLICY "Authenticated users can insert purchase order items"
   ON public.purchase_order_items FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own purchase order items" ON public.purchase_order_items;
 CREATE POLICY "Authenticated users can update their own purchase order items"
   ON public.purchase_order_items FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own purchase order items" ON public.purchase_order_items;
 CREATE POLICY "Authenticated users can delete their own purchase order items"
   ON public.purchase_order_items FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
@@ -198,24 +240,29 @@ CREATE TABLE IF NOT EXISTS public.sales_orders (
   order_date DATE NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
   total_amount NUMERIC(10, 2),
+  so_number TEXT UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
 ALTER TABLE public.sales_orders ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view sales orders" ON public.sales_orders;
 CREATE POLICY "Authenticated users can view sales orders"
   ON public.sales_orders FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert sales orders" ON public.sales_orders;
 CREATE POLICY "Authenticated users can insert sales orders"
   ON public.sales_orders FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own sales orders" ON public.sales_orders;
 CREATE POLICY "Authenticated users can update their own sales orders"
   ON public.sales_orders FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own sales orders" ON public.sales_orders;
 CREATE POLICY "Authenticated users can delete their own sales orders"
   ON public.sales_orders FOR DELETE TO authenticated USING (auth.uid() = user_id);
-
--- Add so_number column to sales_orders table
-ALTER TABLE public.sales_orders
-ADD COLUMN so_number TEXT UNIQUE;
 
 -- Create sales_order_items table
 CREATE TABLE IF NOT EXISTS public.sales_order_items (
@@ -230,12 +277,20 @@ CREATE TABLE IF NOT EXISTS public.sales_order_items (
 );
 
 ALTER TABLE public.sales_order_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view sales order items" ON public.sales_order_items;
 CREATE POLICY "Authenticated users can view sales order items"
   ON public.sales_order_items FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert sales order items" ON public.sales_order_items;
 CREATE POLICY "Authenticated users can insert sales order items"
   ON public.sales_order_items FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own sales order items" ON public.sales_order_items;
 CREATE POLICY "Authenticated users can update their own sales order items"
   ON public.sales_order_items FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own sales order items" ON public.sales_order_items;
 CREATE POLICY "Authenticated users can delete their own sales order items"
   ON public.sales_order_items FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
@@ -245,7 +300,7 @@ CREATE TABLE IF NOT EXISTS public.quality_control_records (
   batch_id UUID REFERENCES public.batches(id) ON DELETE CASCADE,
   inspection_date DATE NOT NULL,
   inspector_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  result TEXT NOT NULL, -- e.g., 'pass', 'fail', 'pending'
+  result TEXT NOT NULL,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -253,16 +308,24 @@ CREATE TABLE IF NOT EXISTS public.quality_control_records (
 );
 
 ALTER TABLE public.quality_control_records ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view quality control records" ON public.quality_control_records;
 CREATE POLICY "Authenticated users can view quality control records"
   ON public.quality_control_records FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert quality control records" ON public.quality_control_records;
 CREATE POLICY "Authenticated users can insert quality control records"
   ON public.quality_control_records FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own quality control records" ON public.quality_control_records;
 CREATE POLICY "Authenticated users can update their own quality control records"
   ON public.quality_control_records FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own quality control records" ON public.quality_control_records;
 CREATE POLICY "Authenticated users can delete their own quality control records"
   ON public.quality_control_records FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
--- Create roles table (for UsersAndRoles)
+-- Create roles table
 CREATE TABLE IF NOT EXISTS public.roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT UNIQUE NOT NULL,
@@ -273,16 +336,24 @@ CREATE TABLE IF NOT EXISTS public.roles (
 );
 
 ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view roles" ON public.roles;
 CREATE POLICY "Authenticated users can view roles"
   ON public.roles FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert roles" ON public.roles;
 CREATE POLICY "Authenticated users can insert roles"
   ON public.roles FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own roles" ON public.roles;
 CREATE POLICY "Authenticated users can update their own roles"
   ON public.roles FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own roles" ON public.roles;
 CREATE POLICY "Authenticated users can delete their own roles"
   ON public.roles FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
--- Create user_roles table (many-to-many relationship between users and roles)
+-- Create user_roles table
 CREATE TABLE IF NOT EXISTS public.user_roles (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   role_id UUID REFERENCES public.roles(id) ON DELETE CASCADE,
@@ -292,12 +363,20 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
 );
 
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view user roles" ON public.user_roles;
 CREATE POLICY "Authenticated users can view user roles"
   ON public.user_roles FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert user roles" ON public.user_roles;
 CREATE POLICY "Authenticated users can insert user roles"
   ON public.user_roles FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own user roles" ON public.user_roles;
 CREATE POLICY "Authenticated users can update their own user roles"
   ON public.user_roles FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own user roles" ON public.user_roles;
 CREATE POLICY "Authenticated users can delete their own user roles"
   ON public.user_roles FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
@@ -313,12 +392,20 @@ CREATE TABLE IF NOT EXISTS public.settings (
 );
 
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view settings" ON public.settings;
 CREATE POLICY "Authenticated users can view settings"
   ON public.settings FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can insert settings" ON public.settings;
 CREATE POLICY "Authenticated users can insert settings"
   ON public.settings FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own settings" ON public.settings;
 CREATE POLICY "Authenticated users can update their own settings"
   ON public.settings FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own settings" ON public.settings;
 CREATE POLICY "Authenticated users can delete their own settings"
   ON public.settings FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
@@ -336,31 +423,45 @@ CREATE TABLE IF NOT EXISTS public.reports (
 );
 
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Authenticated users can view reports" ON public.reports;
 CREATE POLICY "Authenticated users can view reports"
   ON public.reports FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert reports" ON public.reports;
 CREATE POLICY "Authenticated users can insert reports"
   ON public.reports FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can update their own reports" ON public.reports;
 CREATE POLICY "Authenticated users can update their own reports"
   ON public.reports FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Authenticated users can delete their own reports" ON public.reports;
 CREATE POLICY "Authenticated users can delete their own reports"
   ON public.reports FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
 -- Apply update_updated_at_column trigger to all relevant tables
--- Exclude tables that don't need or explicitly handle 'updated_at' differently (e.g., join tables like user_roles)
 DO $$
 DECLARE
     t_name text;
 BEGIN
-    FOR t_name IN (SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name NOT LIKE 'pg_%' AND table_name NOT LIKE 'sql_%' AND t_name NOT IN ('profiles', 'user_roles'))
+    FOR t_name IN (
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_type = 'BASE TABLE' 
+        AND table_name NOT LIKE 'pg_%' 
+        AND table_name NOT LIKE 'sql_%' 
+        AND table_name NOT IN ('profiles', 'user_roles')
+    )
     LOOP
-        -- Check if the trigger already exists to prevent errors on re-run
-        IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_' || t_name || '_updated_at') THEN
-            EXECUTE FORMAT('
-                CREATE TRIGGER update_%I_updated_at
-                BEFORE UPDATE ON public.%I
-                FOR EACH ROW
-                EXECUTE FUNCTION public.update_updated_at_column();
-            ', t_name, t_name);
-        END IF;
+        -- Drop trigger if it exists, then create it
+        EXECUTE FORMAT('DROP TRIGGER IF EXISTS update_%I_updated_at ON public.%I;', t_name, t_name);
+        EXECUTE FORMAT('
+            CREATE TRIGGER update_%I_updated_at
+            BEFORE UPDATE ON public.%I
+            FOR EACH ROW
+            EXECUTE FUNCTION public.update_updated_at_column();
+        ', t_name, t_name);
     END LOOP;
 END $$;
