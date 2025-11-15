@@ -1,13 +1,6 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatCard } from "@/components/StatCard";
-import {
-  Package,
-  AlertTriangle,
-  TrendingUp,
-  ClipboardCheck,
-  DollarSign,
-  ShoppingCart,
-} from "lucide-react";
+import { Package, AlertTriangle, TrendingUp, ClipboardCheck, DollarSign, ShoppingCart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -184,15 +177,23 @@ const Dashboard = () => {
     monthlySalesLoading ||
     qcRecordsLoading
   ) {
-    return <div>Loading dashboard data...</div>;
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-muted-foreground">Loading dashboard data...</div>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   const anyError = expiringBatchesError || lowStockItemsError || recentOrdersError || totalStockValueError || monthlySalesError || qcRecordsError;
   if (anyError) {
     return (
-      <div>
-        Error loading dashboard data: {anyError.message}
-      </div>
+      <DashboardLayout>
+        <div className="text-destructive">
+          Error loading dashboard data: {(anyError as Error).message}
+        </div>
+      </DashboardLayout>
     );
   }
 
@@ -397,4 +398,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

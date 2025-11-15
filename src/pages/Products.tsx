@@ -21,24 +21,48 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import {
-  Plus,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-// Example type (use your own type from API if needed)
 interface ProductRecord {
-  id: number;
+  id: string;
   name: string;
   sku: string;
   category?: string;
-  strength?: string;
-  unit?: string;
-  status: string;
+  price?: number;
   stock_quantity: number;
+  status: string;
 }
+
+const fetchProducts = async (page: number, searchQuery: string, filterCategory: string, filterStatus: string) => {
+  const pageSize = 10;
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from("products")
+    .select("id, name, sku, category, price, stock_quantity, status", { count: 'exact' });
+
+  if (filterCategory !== "all") {
+    query = query.eq("category", filterCategory);
+  }
+
+  if (filterStatus !== "all") {
+    query = query.eq("status", filterStatus);
+  }
+
+  if (searchQuery) {
+    query = query.or(`name.ilike.%${searchQuery}%,sku.ilike.%${searchQuery}%`);
+  }
+
+  const { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) throw error;
+  return { data: data || [], count: count || 0 };
+};
 
 const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,11 +70,15 @@ const Products = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [page, setPage] = useState(0);
 
-  // Example mock data — replace with API data
-  const products: ProductRecord[] = [];
-  const isLoading = false;
-  const error = false;
-  const pageCount = 5;
+  const { data: productsData, isLoading, error } = useQuery({
+    queryKey: ["products", page, searchQuery, filterCategory, filterStatus],
+    queryFn: () => fetchProducts(page, searchQuery, filterCategory, filterStatus),
+  });
+
+  const products: ProductRecord[] = productsData?.data || [];
+  const totalCount = productsData?.count || 0;
+  const pageSize = 10;
+  const pageCount = Math.ceil(totalCount / pageSize);
 
   return (
     <DashboardLayout>
@@ -74,33 +102,41 @@ const Products = () => {
             placeholder="Search products by name, SKU, or category..."
             className="pl-10"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(0);
+            }}
           />
         </div>
 
         {/* Category Filter */}
-        <Select value={filterCategory} onValueChange={setFilterCategory}>
+        <Select value={filterCategory} onValueChange={(val) => {
+          setFilterCategory(val);
+          setPage(0);
+        }}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="antibiotics">Antibiotics</SelectItem>
-            <SelectItem value="analgesics">Analgesics</SelectItem>
-            <SelectItem value="anti-inflammatory">Anti-inflammatory</SelectItem>
+            <SelectItem value="Antibiotics">Antibiotics</SelectItem>
+            <SelectItem value="Analgesics">Analgesics</SelectItem>
+            <SelectItem value="Anti-inflammatory">Anti-inflammatory</SelectItem>
           </SelectContent>
         </Select>
 
         {/* Status Filter */}
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
+        <Select value={filterStatus} onValueChange={(val) => {
+          setFilterStatus(val);
+          setPage(0);
+        }}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="low-stock">Low Stock</SelectItem>
-            <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -114,8 +150,7 @@ const Products = () => {
               <TableHead>Name</TableHead>
               <TableHead>SKU</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Strength</TableHead>
-              <TableHead>Unit</TableHead>
+              <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -125,14 +160,14 @@ const Products = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-4">
+                <TableCell colSpan={8} className="text-center py-4">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : error ? (
               <TableRow>
                 <TableCell
-                  colSpan={9}
+                  colSpan={8}
                   className="text-center py-4 text-destructive"
                 >
                   Error loading products
@@ -141,7 +176,7 @@ const Products = () => {
             ) : products.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={9}
+                  colSpan={8}
                   className="text-center py-4 text-muted-foreground"
                 >
                   No products found
@@ -150,19 +185,18 @@ const Products = () => {
             ) : (
               products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.id}</TableCell>
+                  <TableCell className="font-medium">{product.id.slice(0, 8)}</TableCell>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.sku}</TableCell>
                   <TableCell>{product.category || "-"}</TableCell>
-                  <TableCell>{product.strength || "-"}</TableCell>
-                  <TableCell>{product.unit || "-"}</TableCell>
+                  <TableCell>${product.price?.toFixed(2) || "0.00"}</TableCell>
                   <TableCell>
                     {product.stock_quantity.toLocaleString()}
                   </TableCell>
                   <TableCell>
                     <Badge
                       variant={
-                        product.status === "Active" ? "default" : "destructive"
+                        product.status === "active" ? "default" : "destructive"
                       }
                     >
                       {product.status}

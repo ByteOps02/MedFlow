@@ -22,31 +22,18 @@ export const AuthProvider = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<Error | null>(null);
 
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase.rpc('get_user_role', { user_id: userId });
+      if (error) throw error;
+      setRole(data);
+    } catch (error) {
+      console.error('Error fetching user role:', (error as Error).message);
+      setRole(null);
+    }
+  };
+
   useEffect(() => {
-    const fetchUserRole = async (userId: string) => {
-      try {
-        const { data, error } = await supabase.rpc('get_user_role', { user_id: userId });
-        if (error) throw error;
-        setRole(data);
-      } catch (error) {
-        console.error('Error fetching user role:', (error as Error).message);
-        setRole(null);
-      }
-    };
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        const currentUser = session?.user || null;
-        setUser(currentUser);
-        if (currentUser) {
-          await fetchUserRole(currentUser.id);
-        } else {
-          setRole(null);
-        }
-        setLoading(false);
-      }
-    );
-
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const currentUser = session?.user || null;
       setUser(currentUser);
@@ -57,6 +44,18 @@ export const AuthProvider = ({ children }) => {
       }
       setLoading(false);
     });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        const currentUser = session?.user || null;
+        setUser(currentUser);
+        if (currentUser) {
+          await fetchUserRole(currentUser.id);
+        } else {
+          setRole(null);
+        }
+      }
+    );
 
     return () => {
       authListener.subscription.unsubscribe();
